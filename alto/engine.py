@@ -1868,6 +1868,22 @@ def reservoir_to_target(
         print(f"Processed {files_processed} file(s)")
 
 
+def clean_reservoir(tap: str, filesystem: AltoFileSystem, env: str) -> None:
+    """Clean the reservoir.
+
+    This removes the reservoir directory for a given tap in a given environment.
+    """
+
+    base_path = f"reservoir/{env}/{tap}"
+    
+    # Remove the reservoir directory if it exists
+    try:
+        filesystem.fs.rm(base_path, recursive=True)
+        print(f"Cleaned reservoir for {tap} in {env}.")
+    except FileNotFoundError:
+        print(f"Reservoir not found for {tap} in {env}, skipping cleaning.")
+
+
 def compact_reservoir(tap: str, filesystem: AltoFileSystem, env: str) -> None:
     """Compact the reservoir.
 
