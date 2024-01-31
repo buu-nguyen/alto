@@ -1450,6 +1450,21 @@ def update_remote_state_no_stdout(
     print(f"Remote state file: {remote_state}")
 
 
+def clean_remote_state(
+    tap: str,
+    target: str,
+    filesystem: AltoFileSystem,
+) -> None:
+    """Clean the remote state file."""
+    remote_state = filesystem.state_path(tap, target, remote=True)
+    try:
+        filesystem.fs.rm(remote_state)
+        print(f"Cleaned remote state file for {tap} -> {target}.")
+    except FileNotFoundError:
+        print(f"Remote state file not found for {tap} -> {target}, skipping cleaning.")
+
+
+
 # ================ #
 # Log Preservation #
 # ================ #
