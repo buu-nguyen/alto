@@ -1209,7 +1209,10 @@ class AltoTaskEngine(DoitEngine):
                     (update_remote_state_no_stdout, (tap.name, target, self.filesystem)),
                     (upload_logs, (tap.name, target, pipeline_id, self.filesystem)),
                 )
-                .set_clean((compact_reservoir, (tap,)))
+                .set_clean(
+                    (clean_reservoir, (tap.name, self.filesystem, self.alto.current_env)),
+                    (clean_remote_state, (tap.name, target, self.filesystem)),
+                )
                 .set_uptodate(False)
                 .set_doc(f"Run the {tap} to {target} data pipeline to the reservoir from the tap")
                 .set_verbosity(2)
