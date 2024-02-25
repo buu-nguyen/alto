@@ -1641,10 +1641,23 @@ def reservoir_emitter(
     for pulling data from the reservoir, decompressing, and
     emitting it to the stdin handle of the target process.
     """
-    stream = gzip.decompress(filesystem.fs.cat(path))
+    import zlib
+
+    with filesystem.fs.open(path, 'rb') as f:
+        decompressor = zlib.decompressobj(16 + zlib.MAX_WBITS)  # gzip decompressor
+        buffer = b''
+        for chunk in iter(lambda: f.read(8192), b''):  # Read in chunks of 8KB
+            buffer += decompressor.decompress(chunk)
+            while b'\n' in buffer:
+                line, buffer = buffer.split(b'\n', 1)
+                with lock:
+                    # Write the records to the target's stdin handle with a lock
+                    if line:
+                        stdin.write(line + b"\n")
+    # Write any remaining data in the buffer
     with lock:
-        # Write the records to the target's stdin handle with a lock
-        stdin.writelines((line + b"\n") for line in stream.splitlines() if line)
+        if buffer:
+            stdin.write(buffer + b"\n")
     return path
 
 
@@ -1867,7 +1880,7 @@ def reservoir_to_target(
                 job_res = tpe.map(
                     reservoir_emitter,
                     itertools.repeat(target_proc.stdin),
-                    [path for path in paths_to_emit],
+                    (path for path in paths_to_emit),
                     itertools.repeat(filesystem),
                     itertools.repeat(reservoir_lock),
                 )
